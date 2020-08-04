@@ -1,0 +1,11 @@
+@startuml
+Client -> Server: POST /auth/login
+Server -> Server: Validate username and password \n Generate JWT
+Server -> Client: REPLY JWT
+
+|||
+
+Client -> Server: GET /resource with Authentication Header
+Server -> Server: Validate JWT from Header
+Server -> Client: REPLY resource
+@enduml

@@ -1,5 +1,6 @@
 package com.itchyfingers.springsecurity.config;
 
+import com.itchyfingers.springsecurity.filter.JwtVerificationFilter;
 import com.itchyfingers.springsecurity.filter.LoginFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +14,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -25,6 +25,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  @Bean
+  public JwtVerificationFilter jwtAuthFilter() {
+    return new JwtVerificationFilter();
   }
 
   @Bean
@@ -44,9 +49,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   protected void configure(HttpSecurity http) throws Exception {
     http
         .csrf().disable()
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
         .authorizeRequests()
-        .antMatchers("/resources/public/**").permitAll()
+        .antMatchers("/messages/public/**").hasAuthority("ROLE_USER")
+        .antMatchers("/messages/private/**").hasAuthority("ROLE_ADMIN")
         .anyRequest().authenticated();
+
+    http.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
     http.addFilter(loginFilter());
   }
 }

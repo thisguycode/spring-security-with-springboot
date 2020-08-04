@@ -36,8 +36,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     if (validUsers.contains(username)) {
       final var userDetails = User.withUsername(username)
           .password(passwordEncoder.encode("password"))
-          .roles("USER")
-          //.authorities(List.of(new SimpleGrantedAuthority("ROLE_USER")))
+          .authorities(List.of(new SimpleGrantedAuthority("ROLE_USER"),
+              new SimpleGrantedAuthority("ROLE_ADMIN")))
           .build();
       return Optional.of(userDetails);
     }

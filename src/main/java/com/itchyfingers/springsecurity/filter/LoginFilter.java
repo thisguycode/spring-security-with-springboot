@@ -3,6 +3,9 @@ package com.itchyfingers.springsecurity.filter;
 import com.itchyfingers.springsecurity.model.LoginRequest;
 import com.itchyfingers.springsecurity.model.LoginResponse;
 import com.itchyfingers.springsecurity.util.JsonUtils;
+import com.itchyfingers.springsecurity.util.JwtConstants;
+import com.itchyfingers.springsecurity.util.JwtUtils;
+import io.jsonwebtoken.Jwts;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -13,12 +16,11 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Slf4j
@@ -51,10 +53,17 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
       FilterChain chain, Authentication authResult) throws IOException {
     log.info("successfulAuthentication");
 
-    SecurityContextHolder.getContext().setAuthentication(authResult);
+    final var principal = (User) authResult.getPrincipal();
 
-    final var message = "Login successful. Authenticated!";
-    final var responseMsg = LoginResponse.builder().message(message).build();
+    final var claims = Jwts.claims().setSubject(principal.getUsername());
+    claims.put("authorities", principal.getAuthorities());
+
+    final var jwt = JwtUtils.generateJwt(claims);
+
+    final var responseMsg = LoginResponse.builder()
+        .tokenType(JwtConstants.TOKEN_TYPE)
+        .token(jwt)
+        .build();
     setResponse(response, HttpStatus.OK, responseMsg);
   }
 
